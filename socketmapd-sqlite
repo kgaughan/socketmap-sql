@@ -99,8 +99,11 @@ class Handler(socketserver.StreamRequestHandler):
 
     def _query_db(self, table, arg):
         cur = self.server.db_conn.cursor()
-        cur.execute(table['query'], [table['transform'](arg)])
-        return cur.fetchone()
+        try:
+            cur.execute(table['query'], [table['transform'](arg)])
+            return cur.fetchone()
+        finally:
+            cur.close()
 
     def run_query(self, table_name, arg):
         table = self.server.tables.get(table_name)
