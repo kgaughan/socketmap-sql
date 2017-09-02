@@ -115,17 +115,18 @@ class Handler(socketserver.StreamRequestHandler):
         self.wfile.write('{}:{},'.format(len(response), response))
 
     def handle(self):
-        for request in netstring_reader(self.rfile):
-            table_name, arg = request.split(' ', 1)
-            try:
+        try:
+            for request in netstring_reader(self.rfile):
+                table_name, arg = request.split(' ', 1)
                 result = self.run_query(table_name, arg)
-            except Exception as exc:
-                self.write_netstring('PERM ' + str(exc))
-            else:
                 if result is None:
                     self.write_netstring('NOTFOUND ')
                 else:
                     self.write_netstring('OK ' + result[0])
+        except MalformedNetstringError:
+            self.write_netstring('PERM malformed netstring')
+        except Exception as exc:
+            self.write_netstring('PERM ' + str(exc))
 
 
 def create_arg_parser():
