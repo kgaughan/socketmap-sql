@@ -1,8 +1,8 @@
-=================
-socketmapd-sqlite
-=================
+================
+socketmap-sqlite
+================
 
-A socketmap daemon wrapping an SQLite database.
+A socketmap script wrapping an SQLite database.
 
 Why?
 ====
@@ -39,26 +39,33 @@ The `query` field give an SQL query to be urn to generate the synthetic table.
 The value to be queried is given as a '?', which is the SQLite driver's
 placeholder in prepared statements.
 
-There can be multiple ``table:`` sections. The daemon listens on a Unix
-socket, so if you want to run the query given in ``table:foo``, you'd denote
-this in postfix with::
-
-    socketmap:unix:/path/to/socketmap.sock:foo
-
 Usage
 =====
 
 Run with::
 
-    socketmapd-sqlite --config /path/to/config.ini --sock /path/to.sock
+    socketmap-sqlite --config /path/to/config.ini
 
 If you don't provide the `--config` flag, it defaults to
-``/etc/socketmapd-sqlite.ini``, and, similarly, ``--sock`` defaults to
-``/var/run/socketmapd-sqlite.sock``.
+``/etc/socketmap-sqlite.ini``.
+
+Postfix
+=======
+
+This script is intended to be executed by Postfix's spawn_ mechanism, meaning
+it reads its input and writes its output to stdin and stdout respectively.
+
+.. _spawn: http://www.postfix.org/spawn.8.html
+
+Assuming you've installed the script in ``/usr/local/libexec``, add the
+following to ``master.cf``::
+
+    sockmapd  unix  -      -       n       -       1       spawn
+      user=nobody argv=/usr/local/libexec/socketmapd-sqlite
 
 Compatibility
 =============
 
-The daemon ought to work on Python 2.7, but only Python 3.3+ are supported.
+The script ought to work on Python 2.7, but only Python 3.3+ are supported.
 
 .. vim:set ft=rst:

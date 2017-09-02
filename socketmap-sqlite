@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 #
-# socketmapd-sqlite
+# socketmap-sqlite
 # by Keith Gaughan (https://github.com/kgaughan/)
 #
-# A daemon implementing the sendmail socketmap protocol to allow an SQLite
-# database to be queried out of process.
+# This implements the sendmail socketmap protocol to allow an SQLite database
+# to be queried out of process.
 #
 # Copyright (c) Keith Gaughan, 2017. See 'LICENSE' for license details.
 #
@@ -17,11 +17,6 @@ try:
     import configparser
 except ImportError:
     import ConfigParser as configparser
-import logging
-try:
-    import socketserver
-except ImportError:
-    import SocketServer as socketserver
 import os
 import os.path
 import re
@@ -91,54 +86,9 @@ def netstring_reader(fp):
         yield payload
 
 
-class NoSuchTable(Exception):
-    pass
-
-
-class Handler(socketserver.StreamRequestHandler):
-
-    def _query_db(self, table, arg):
-        cur = self.server.db_conn.cursor()
-        try:
-            cur.execute(table['query'], [table['transform'](arg)])
-            return cur.fetchone()
-        finally:
-            cur.close()
-
-    def run_query(self, table_name, arg):
-        table = self.server.tables.get(table_name)
-        if table is None:
-            raise NoSuchTable(table_name)
-        return self._query_db(table, arg)
-
-    def write_netstring(self, response):
-        self.wfile.write('{}:{},'.format(len(response), response))
-
-    def handle(self):
-        try:
-            for request in netstring_reader(self.rfile):
-                table_name, arg = request.split(' ', 1)
-                result = self.run_query(table_name, arg)
-                if result is None:
-                    self.write_netstring('NOTFOUND ')
-                else:
-                    self.write_netstring('OK ' + result[0])
-        except MalformedNetstringError:
-            self.write_netstring('PERM malformed netstring')
-        except Exception as exc:
-            self.write_netstring('PERM ' + str(exc))
-
-
-def create_arg_parser():
-    parser = argparse.ArgumentParser(description='SQLite socketmap daemon.')
-    parser.add_argument('--config',
-                        help='Path to config file',
-                        type=argparse.FileType(),
-                        default='/etc/socketmapd-sqlite.ini')
-    parser.add_argument('--sock',
-                        help='Path to server socket file',
-                        default='/var/run/socketmapd-sqlite.sock')
-    return parser
+def write_netstring(response):
+    sys.stdout.write('{}:{},'.format(len(response), response))
+    sys.stdout.flush()
 
 
 def parse_config(fp):
@@ -163,7 +113,6 @@ def parse_config(fp):
         if section.startswith('table:'):
             _, table_name = section.split(':', 1)
             if not cp.has_option(section, 'query'):
-                logging.warning("No query in '%s': skipping", section)
                 continue
 
             try:
@@ -188,12 +137,12 @@ def parse_config(fp):
 
 
 def main():
-    parser = create_arg_parser()
+    parser = argparse.ArgumentParser(description='SQLite socketmap daemon.')
+    parser.add_argument('--config',
+                        help='Path to config file',
+                        type=argparse.FileType(),
+                        default='/etc/socketmap-sqlite.ini')
     args = parser.parse_args()
-    if os.path.exists(args.sock):
-        parser.error("Socket file exists: {}".format(args.sock))
-
-    logging.basicConfig()
 
     with contextlib.closing(args.config):
         cfg = parse_config(args.config)
@@ -202,14 +151,31 @@ def main():
         print("error: cannot find {}".format(cfg['db_path']), file=sys.stderr)
         return 2
 
-    server = socketserver.UnixStreamServer(args.sock, Handler)
-    server.tables = cfg['tables']
     with contextlib.closing(sqlite3.connect(cfg['db_path'])) as conn:
-        server.db_conn = conn
         try:
-            server.serve_forever()
-        finally:
-            os.remove(args.sock)
+            for request in netstring_reader(sys.stdin):
+                table_name, arg = request.split(' ', 1)
+
+                table = cfg['tables'].get(table_name)
+                if table is None:
+                    write_netstring('PERM no such table: ' + table_name)
+                    continue
+
+                cur = conn.cursor()
+                try:
+                    cur.execute(table['query'], [table['transform'](arg)])
+                    result = cur.fetchone()
+                finally:
+                    cur.close()
+
+                if result is None:
+                    write_netstring('NOTFOUND ')
+                else:
+                    write_netstring('OK ' + str(result[0]))
+        except MalformedNetstringError:
+            write_netstring('PERM malformed netstring')
+        except Exception as exc:
+            write_netstring('PERM ' + str(exc))
 
     return 0
 
