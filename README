@@ -1,0 +1,64 @@
+================
+socketmap-sqlite
+================
+
+A socketmap daemon wrapping an SQLite database.
+
+Why?
+====
+
+I have a number of FreeBSD servers, with one intended to act as my primary
+mailserver (the current one and remaining one becoming secondary mailservers).
+The problem is that I'm using postfix, and trying very hard to stick to
+precompiled packages rather than using ports, and postfix on FreeBSD lacks
+bindings to databases. In my case, I wanted to be able to use an SQLite
+database.
+
+Configuration format
+====================
+
+Configuration files are INI files containing two types of section.
+
+First is the ``[database]`` section, which gives database connection details.
+This has one field, `path`, which gives the path to the SQLite database.
+Example::
+
+    [database]
+    path = /path/to/sqlite.db
+
+Other sections start wth ``table:``, and denote virtual tables to be queried.
+There are two fields: `transform` (optional) and `query` (required).
+
+The `transform` field gives the name of a transformation to apply to the query
+parameter before its use in the query the query. The default is to accept the
+parameter as-is (`all`). Other values can be a reference to a Python function
+in the form 'module:function', `local` for just the local part, and `domain`
+for the domain part of the address.
+
+The `query` field give an SQL query to be urn to generate the synthetic table.
+The value to be queried is given as a '?', which is the SQLite driver's
+placeholder in prepared statements.
+
+There can be multiple ``table:`` sections. The daemon listens on a Unix
+socket, so if you want to run the query given in ``table:foo``, you'd denote
+this in postfix with::
+
+    socketmap:unix:/path/to/socketmap.sock:foo
+
+Usage
+=====
+
+Run with::
+
+    socketmapd --config=/path/to/config.ini --sock=/path/to.sock
+
+If you don't provide the `--config` flag, it defaults to
+``/etc/socketmapd.ini``, and, similarly, ``--sock`` defaults to
+``/var/run/sockmapd.sock``.
+
+Compatibility
+=============
+
+The daemon ought to work on Python 2.7, but only Python 3.3+ are supported.
+
+.. vim:set ft=rst:
