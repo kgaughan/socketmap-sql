@@ -1,6 +1,6 @@
-================
-socketmap-sqlite
-================
+=================
+socketmapd-sqlite
+=================
 
 A socketmap daemon wrapping an SQLite database.
 
@@ -50,11 +50,11 @@ Usage
 
 Run with::
 
-    socketmapd --config=/path/to/config.ini --sock=/path/to.sock
+    socketmapd-sqlite --config /path/to/config.ini --sock /path/to.sock
 
 If you don't provide the `--config` flag, it defaults to
-``/etc/socketmapd.ini``, and, similarly, ``--sock`` defaults to
-``/var/run/sockmapd.sock``.
+``/etc/socketmapd-sqlite.ini``, and, similarly, ``--sock`` defaults to
+``/var/run/socketmapd-sqlite.sock``.
 
 Compatibility
 =============
