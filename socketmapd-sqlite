@@ -193,6 +193,8 @@ def main():
     if os.path.exists(args.sock):
         parser.error("Socket file exists: {}".format(args.sock))
 
+    logging.basicConfig()
+
     with contextlib.closing(args.config):
         cfg = parse_config(args.config)
 
