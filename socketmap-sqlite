@@ -20,6 +20,7 @@ except ImportError:
 import os
 import os.path
 import re
+import select
 import sqlite3
 import sys
 
@@ -59,36 +60,40 @@ class MalformedNetstringError(Exception):
     pass
 
 
-def netstring_reader(fp):
+def read_netstring(fp):
+    """
+    Reads a single netstring.
+    """
+    n = ""
     while True:
-        n = ""
-        while True:
-            c = fp.read(1)
-            if c == '':
-                return
-            if c == ':':
-                break
-            if len(n) > 10:
-                raise MalformedNetstringError
-            if c == '0' and n == '':
-                # We can't allow leading zeros.
-                if fp.read(1) != ':':
-                    raise MalformedNetstringError
-                n = c
-                break
-            n += c
-        n = int(n, 10)
-        payload = fp.read(n)
-        if len(payload) < n:
-            return
-        if fp.read(1) != ',':
+        c = fp.read(1)
+        if c == '':
+            return None
+        if c == ':':
+            break
+        if len(n) > 10:
             raise MalformedNetstringError
-        yield payload
+        if c == '0' and n == '':
+            # We can't allow leading zeros.
+            if fp.read(1) != ':':
+                raise MalformedNetstringError
+            n = c
+            break
+        n += c
+    n = int(n, 10)
+    result = ""
+    while n > 0:
+        segment = fp.read(n)
+        n -= len(segment)
+        result += segment
+    if fp.read(1) != ',':
+        raise MalformedNetstringError
+    return result
 
 
-def write_netstring(response):
-    sys.stdout.write('{}:{},'.format(len(response), response))
-    sys.stdout.flush()
+def write_netstring(fp, response):
+    fp.write('{}:{},'.format(len(response), response))
+    fp.flush()
 
 
 def parse_config(fp):
@@ -142,6 +147,10 @@ def main():
                         help='Path to config file',
                         type=argparse.FileType(),
                         default='/etc/socketmap-sqlite.ini')
+    parser.add_argument('--timeout',
+                        help='Number of seconds to wait before exiting',
+                        type=int,
+                        default=2)
     args = parser.parse_args()
 
     with contextlib.closing(args.config):
@@ -153,12 +162,21 @@ def main():
 
     with contextlib.closing(sqlite3.connect(cfg['db_path'])) as conn:
         try:
-            for request in netstring_reader(sys.stdin):
+            while True:
+                # Wait a short period before exiting.
+                iready, _, _ = select.select([sys.stdin], (), (),
+                                             args.timeout)
+                if len(iready) == 0:
+                    break
+
+                request = read_netstring(sys.stdin)
+
                 table_name, arg = request.split(' ', 1)
 
                 table = cfg['tables'].get(table_name)
                 if table is None:
-                    write_netstring('PERM no such table: ' + table_name)
+                    write_netstring(sys.stdout,
+                                    'PERM no such table: ' + table_name)
                     continue
 
                 cur = conn.cursor()
@@ -169,13 +187,13 @@ def main():
                     cur.close()
 
                 if result is None:
-                    write_netstring('NOTFOUND ')
+                    write_netstring(sys.stdout, 'NOTFOUND ')
                 else:
-                    write_netstring('OK ' + str(result[0]))
+                    write_netstring(sys.stdout, 'OK ' + str(result[0]))
         except MalformedNetstringError:
-            write_netstring('PERM malformed netstring')
+            write_netstring(sys.stdout, 'PERM malformed netstring')
         except Exception as exc:
-            write_netstring('PERM ' + str(exc))
+            write_netstring(sys.stdout, 'PERM ' + str(exc))
 
     return 0
 
