@@ -98,13 +98,13 @@ def write_netstring(fp, response):
 
 def parse_config(fp):
     def passthrough(arg):
-        return arg
+        return [arg]
 
     def local_part(arg):
-        return arg.split('@', 1)[0]
+        return [arg.split('@', 1)[0]]
 
     def domain_part(arg):
-        return arg.split('@', 1)[1]
+        return [arg.split('@', 1)[1]]
 
     cp = configparser.RawConfigParser()
     cp.readfp(fp)
@@ -161,7 +161,7 @@ def server(conn, timeout, tables):
 
             cur = conn.cursor()
             try:
-                cur.execute(table['query'], [table['transform'](arg)])
+                cur.execute(table['query'], table['transform'](arg))
                 result = cur.fetchone()
             finally:
                 cur.close()
