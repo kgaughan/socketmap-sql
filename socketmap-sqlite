@@ -141,6 +141,41 @@ def parse_config(fp):
     return result
 
 
+def server(conn, timeout, tables):
+    try:
+        while True:
+            # Wait a short period before exiting.
+            iready, _, _ = select.select([sys.stdin], (), (), timeout)
+            if len(iready) == 0:
+                break
+
+            request = read_netstring(sys.stdin)
+
+            table_name, arg = request.split(' ', 1)
+
+            table = tables.get(table_name)
+            if table is None:
+                write_netstring(sys.stdout,
+                                'PERM no such table: ' + table_name)
+                continue
+
+            cur = conn.cursor()
+            try:
+                cur.execute(table['query'], [table['transform'](arg)])
+                result = cur.fetchone()
+            finally:
+                cur.close()
+
+            if result is None:
+                write_netstring(sys.stdout, 'NOTFOUND ')
+            else:
+                write_netstring(sys.stdout, 'OK ' + str(result[0]))
+    except MalformedNetstringError:
+        write_netstring(sys.stdout, 'PERM malformed netstring')
+    except Exception as exc:
+        write_netstring(sys.stdout, 'PERM ' + str(exc))
+
+
 def main():
     parser = argparse.ArgumentParser(description='SQLite socketmap daemon.')
     parser.add_argument('--config',
@@ -161,39 +196,7 @@ def main():
         return 2
 
     with contextlib.closing(sqlite3.connect(cfg['db_path'])) as conn:
-        try:
-            while True:
-                # Wait a short period before exiting.
-                iready, _, _ = select.select([sys.stdin], (), (),
-                                             args.timeout)
-                if len(iready) == 0:
-                    break
-
-                request = read_netstring(sys.stdin)
-
-                table_name, arg = request.split(' ', 1)
-
-                table = cfg['tables'].get(table_name)
-                if table is None:
-                    write_netstring(sys.stdout,
-                                    'PERM no such table: ' + table_name)
-                    continue
-
-                cur = conn.cursor()
-                try:
-                    cur.execute(table['query'], [table['transform'](arg)])
-                    result = cur.fetchone()
-                finally:
-                    cur.close()
-
-                if result is None:
-                    write_netstring(sys.stdout, 'NOTFOUND ')
-                else:
-                    write_netstring(sys.stdout, 'OK ' + str(result[0]))
-        except MalformedNetstringError:
-            write_netstring(sys.stdout, 'PERM malformed netstring')
-        except Exception as exc:
-            write_netstring(sys.stdout, 'PERM ' + str(exc))
+        server(conn, args.timeout, cfg['tables'])
 
     return 0
 
