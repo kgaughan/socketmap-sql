@@ -18,8 +18,10 @@ try:
 except ImportError:
     import ConfigParser as configparser
 import importlib
+import os.path
 import re
 import select
+import subprocess
 import sys
 
 
@@ -193,13 +195,32 @@ def main():
                         help='Number of seconds to wait before exiting',
                         type=int,
                         default=2)
+    parser.add_argument('--client', action='store_true',
+                        help='Start with a debug client')
     args = parser.parse_args()
 
     with contextlib.closing(args.config):
         cfg = parse_config(args.config)
 
-    with contextlib.closing(connect(cfg['db'])) as conn:
-        serve_client(sys.stdin, sys.stdout, conn, args.timeout, cfg['tables'])
+    if args.client:
+        svr_args = [arg for arg in sys.argv if arg != '--client']
+        svr_args[0] = os.path.abspath(svr_args[0])
+        proc = subprocess.Popen(svr_args,
+                                stdin=subprocess.PIPE,
+                                stdout=subprocess.PIPE,
+                                encoding='utf-8')
+        print("Type '.exit' to exit.")
+        while proc.poll() is None:
+            req = input('socketmap> ')
+            if req == '.exit':
+                proc.terminate()
+                break
+            write_netstring(proc.stdin, req)
+            print(read_netstring(proc.stdout))
+    else:
+        with contextlib.closing(connect(cfg['db'])) as conn:
+            serve_client(sys.stdin, sys.stdout,
+                         conn, args.timeout, cfg['tables'])
 
     return 0
 
