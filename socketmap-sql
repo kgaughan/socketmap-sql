@@ -140,21 +140,21 @@ def parse_config(fp):
     return result
 
 
-def server(conn, timeout, tables):
+def serve_client(fh_in, fh_out, conn, timeout, tables):
     try:
         while True:
             # Wait a short period before exiting.
-            iready, _, _ = select.select([sys.stdin], (), (), timeout)
+            iready, _, _ = select.select([fh_in], (), (), timeout)
             if len(iready) == 0:
                 break
 
-            request = read_netstring(sys.stdin)
+            request = read_netstring(fh_in)
 
             table_name, arg = request.split(' ', 1)
 
             table = tables.get(table_name)
             if table is None:
-                write_netstring(sys.stdout,
+                write_netstring(fh_out,
                                 'PERM no such table: ' + table_name)
                 continue
 
@@ -166,13 +166,13 @@ def server(conn, timeout, tables):
                 cur.close()
 
             if result is None:
-                write_netstring(sys.stdout, 'NOTFOUND ')
+                write_netstring(fh_out, 'NOTFOUND ')
             else:
-                write_netstring(sys.stdout, 'OK ' + str(result[0]))
+                write_netstring(fh_out, 'OK ' + str(result[0]))
     except MalformedNetstringError:
-        write_netstring(sys.stdout, 'PERM malformed netstring')
+        write_netstring(fh_out, 'PERM malformed netstring')
     except Exception as exc:
-        write_netstring(sys.stdout, 'PERM ' + str(exc))
+        write_netstring(fh_out, 'PERM ' + str(exc))
 
 
 def connect(settings):
@@ -199,7 +199,7 @@ def main():
         cfg = parse_config(args.config)
 
     with contextlib.closing(connect(cfg['db'])) as conn:
-        server(conn, args.timeout, cfg['tables'])
+        serve_client(sys.stdin, sys.stdout, conn, args.timeout, cfg['tables'])
 
     return 0
 
