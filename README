@@ -19,8 +19,8 @@ Configuration format
 Configuration files are INI files containing two types of section.
 
 First is the ``[database]`` section, which gives database connection details.
-The `driver` field specifies the driver to use; if omitted, its value defaults
-to 'sqlite3'. The remaining fields are passed to the driver's `connect()`
+The *driver* field specifies the driver to use; if omitted, its value defaults
+to *sqlite3*. The remaining fields are passed to the driver's ``connect()``
 function.
 
 ::
@@ -30,17 +30,17 @@ function.
     database = /path/to/sqlite.db
 
 Other sections start wth ``table:``, and denote virtual tables to be queried.
-There are two fields: `transform` (optional) and `query` (required).
+There are two fields: *transform* (optional) and *query* (required).
 
-The `transform` field gives the name of a transformation to apply to the query
+The *transform* field gives the name of a transformation to apply to the query
 parameter before its use in the query the query. The default is to accept the
-parameter as-is (`all`). Other values can be a reference to a Python function
-in the form 'module:function', `local` for just the local part, `domain` for
-the domain part of the address, and `split` breaks an email address in two.
+parameter as-is (*all*). Other values can be a reference to a Python function
+in the form 'module:function', *local* for just the local part, *domain* for
+the domain part of the address, and *split* breaks an email address in two.
 It must return a list or tuple giving the postitional arguments to use in the
 query.
 
-The `query` field give an SQL query to be used to generate the synthetic table.
+The *query* field give an SQL query to be used to generate the synthetic table.
 Use placeholders as specified by the database driver's documentation.
 
 Usage
@@ -50,7 +50,7 @@ Run with::
 
     socketmap-sql --config /path/to/config.ini
 
-If you don't provide the `--config` flag, it defaults to
+If you don't provide the *--config* flag, it defaults to
 ``/etc/socketmap-sql.ini``.
 
 Postfix
