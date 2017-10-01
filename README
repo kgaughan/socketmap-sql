@@ -35,9 +35,10 @@ There are two fields: `transform` (optional) and `query` (required).
 The `transform` field gives the name of a transformation to apply to the query
 parameter before its use in the query the query. The default is to accept the
 parameter as-is (`all`). Other values can be a reference to a Python function
-in the form 'module:function', `local` for just the local part, and `domain`
-for the domain part of the address. It must return a list or tuple giving the
-postitional arguments to use in the query.
+in the form 'module:function', `local` for just the local part, `domain` for
+the domain part of the address, and `split` breaks an email address in two.
+It must return a list or tuple giving the postitional arguments to use in the
+query.
 
 The `query` field give an SQL query to be used to generate the synthetic table.
 Use placeholders as specified by the database driver's documentation.

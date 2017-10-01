@@ -100,6 +100,9 @@ def parse_config(fp):
     def domain_part(arg):
         return [arg.split('@', 1)[1]]
 
+    def split(arg):
+        return arg.split('@', 1)
+
     cp = configparser.RawConfigParser()
     cp.readfp(fp)
 
@@ -124,6 +127,8 @@ def parse_config(fp):
                 transform = local_part
             elif transform_name == 'domain':
                 transform = domain_part
+            elif transform_name == 'split':
+                transform = split
             else:
                 transform = resolve(*match(transform_name))
 
