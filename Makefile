@@ -1,11 +1,15 @@
+dev: .venv
+	.venv/bin/pip install flit
+	.venv/bin/flit install --symlink
+
+
+.venv:
+	python3 -m venv .venv
+
 wheel:
-	rm -rf build
-	python3 setup.py sdist bdist_wheel
+	.venv/bin/flit build
 
-upload: wheel
-	twine upload dist/socketmap_sql-*
+release: wheel
+	.venv/bin/flit publish
 
-clean:
-	rm -rf build dist *.egg-info
-
-.PHONY: wheel upload clean
+.PHONY: dev wheel release

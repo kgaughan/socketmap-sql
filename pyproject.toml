@@ -1,0 +1,24 @@
+[build-system]
+requires = ["flit"]
+build-backend = "flit.buildapi"
+
+[tool.flit.metadata]
+dist-name = "socketmap-sql"
+module = "socketmapsql"
+author = "Keith Gaughan"
+author-email = "k@stereochro.me"
+home-page = "https://github.com/kgaughan/socketmap-sql"
+requires-python = ">=3.3"
+classifiers = [
+	"Development Status :: 4 - Beta",
+	"Intended Audience :: System Administrators",
+	"License :: OSI Approved :: MIT License",
+	"Operating System :: POSIX",
+	"Programming Language :: Python :: 3",
+	"Programming Language :: Python :: 3 :: Only",
+	"Topic :: Communications :: Email :: Mail Transport Agents",
+	"Topic :: Database",
+]
+
+[tool.flit.scripts]
+socketmap-sql = "socketmapsql:main"

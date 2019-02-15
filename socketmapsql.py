@@ -1,13 +1,8 @@
 #!/usr/bin/env python3
-#
-# socketmap-sql
-# by Keith Gaughan (https://github.com/kgaughan/)
-#
-# This implements the sendmail socketmap protocol to allow an SQL database to
-# be queried out of process.
-#
-# Copyright (c) Keith Gaughan, 2017. See 'LICENSE' for license details.
-#
+"""
+An implementation of the sendmail socketmap protocol to allow an SQL database
+to be queried out of process.
+"""
 
 import argparse
 import contextlib
@@ -18,6 +13,9 @@ import re
 import select
 import subprocess
 import sys
+
+
+__version__ = "0.1.0"
 
 
 FUNC_REF_PATTERN = re.compile(r"""
