@@ -2,16 +2,21 @@
 socketmap-sql
 =============
 
-A socketmap script for interfacing with an SQL database.
+A socketmap_ script for interfacing with an SQL database.
+
+.. _socketmap: http://www.postfix.org/socketmap_table.5.html
 
 Why?
 ====
 
-I have a number of FreeBSD servers, with one intended to act as my primary
+I have a number of FreeBSD_ servers, with one intended to act as my primary
 mailserver (the current one and remaining one becoming secondary mailservers).
-The problem is that I'm using postfix, and trying very hard to stick to
-precompiled packages rather than using ports, and postfix on FreeBSD lacks
+The problem is that I'm using Postfix_, and trying very hard to stick to
+precompiled packages rather than using ports, and Postfix on FreeBSD lacks
 bindings to databases. In my case, I wanted to be able to use an SQL database.
+
+.. _FreeBSD: https://www.freebsd.org/
+.. _Postfix: http://www.postfix.org/
 
 Configuration format
 ====================
@@ -29,7 +34,7 @@ function.
     driver = sqlite3
     database = /path/to/sqlite.db
 
-Other sections start wth ``table:``, and denote virtual tables to be queried.
+Other sections start with ``table:``, and denote virtual tables to be queried.
 There are two fields: *transform* (optional) and *query* (required).
 
 The *transform* field gives the name of a transformation to apply to the query
