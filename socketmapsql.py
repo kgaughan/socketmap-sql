@@ -89,22 +89,34 @@ def write_netstring(fp, response):
 
 
 def parse_config(fp):
-    def passthrough(arg):
-        return [arg]
+    def process_local(local_part, cfg):
+        delimiter = cfg.get("recipient_delimiter", "").strip()
+        if delimiter != "":
+            local_part = local_part.split(delimiter, 1)[0]
+        return local_part
 
-    def local_part(arg):
-        return [arg.split("@", 1)[0]]
+    def split(arg, cfg):
+        parts = arg.split("@", 1)
+        parts[0] = process_local(parts[0], cfg)
+        parts[1] = parts[1].lower()
+        return parts
 
-    def domain_part(arg):
-        return [arg.split("@", 1)[1]]
-
-    def split(arg):
-        return arg.split("@", 1)
+    transforms = {
+        "all": lambda arg, cfg: [arg],
+        "lowercase": lambda arg, cfg: [arg.lower()],
+        "local": lambda arg, cfg: [process_local(arg.split("@", 1)[0], cfg)],
+        "domain": lambda arg, cfg: [arg.split("@", 1)[1].lower()],
+        "split": split,
+    }
 
     cp = configparser.RawConfigParser()
     cp.readfp(fp)
 
-    result = {"db": dict(cp.items("database")), "tables": {}}
+    result = {
+        "database": dict(cp.items("database")),
+        "tables": {},
+        "misc": dict(cp.items("misc")),
+    }
 
     for section in cp.sections():
         if section.startswith("table:"):
@@ -116,15 +128,8 @@ def parse_config(fp):
                 transform_name = cp.get(section, "transform")
             except configparser.NoOptionError:
                 transform_name = "all"
-            if transform_name == "all":
-                transform = passthrough
-            elif transform_name == "local":
-                transform = local_part
-            elif transform_name == "domain":
-                transform = domain_part
-            elif transform_name == "split":
-                transform = split
-            else:
+            transform = transforms.get(transform_name)
+            if transform is None:
                 transform = resolve(*match(transform_name))
 
             result["tables"][table_name] = {
@@ -135,7 +140,7 @@ def parse_config(fp):
     return result
 
 
-def serve_client(fh_in, fh_out, conn, timeout, tables):
+def serve_client(fh_in, fh_out, conn, timeout, tables, cfg):
     try:
         while True:
             # Wait a short period before exiting.
@@ -154,7 +159,7 @@ def serve_client(fh_in, fh_out, conn, timeout, tables):
 
             cur = conn.cursor()
             try:
-                cur.execute(table["query"], table["transform"](arg))
+                cur.execute(table["query"], table["transform"](arg, cfg))
                 result = cur.fetchone()
             finally:
                 cur.close()
@@ -214,8 +219,10 @@ def main():
             write_netstring(proc.stdin, req)
             print(read_netstring(proc.stdout))
     else:
-        with contextlib.closing(connect(cfg["db"])) as conn:
-            serve_client(sys.stdin, sys.stdout, conn, args.timeout, cfg["tables"])
+        with contextlib.closing(connect(cfg["database"])) as conn:
+            serve_client(
+                sys.stdin, sys.stdout, conn, args.timeout, cfg["tables"], cfg["misc"]
+            )
 
     return 0
 
