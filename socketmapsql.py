@@ -35,10 +35,10 @@ FUNC_REF_PATTERN = re.compile(
 
 
 def match(name):
-    matches = FUNC_REF_PATTERN.match(name)
-    if not matches:
-        raise ValueError("Malformed callable '{}'".format(name))
-    return matches.group("module"), matches.group("object")
+    if matches := FUNC_REF_PATTERN.match(name):
+        return matches.group("module"), matches.group("object")
+    else:
+        raise ValueError(f"Malformed callable '{name}'")
 
 
 def resolve(module_name, obj_name):
@@ -84,7 +84,7 @@ def read_netstring(fp):
 
 
 def write_netstring(fp, response):
-    fp.write("{}:{},".format(len(response), response))
+    fp.write(f"{len(response)}:{response},")
     fp.flush()
 
 
@@ -154,7 +154,7 @@ def serve_client(fh_in, fh_out, conn, timeout, tables, cfg):
 
             table = tables.get(table_name)
             if table is None:
-                write_netstring(fh_out, "PERM no such table: " + table_name)
+                write_netstring(fh_out, f"PERM no such table: {table_name}")
                 continue
 
             cur = conn.cursor()
@@ -167,11 +167,11 @@ def serve_client(fh_in, fh_out, conn, timeout, tables, cfg):
             if result is None:
                 write_netstring(fh_out, "NOTFOUND ")
             else:
-                write_netstring(fh_out, "OK " + str(result[0]))
+                write_netstring(fh_out, f"OK {str(result[0])}")
     except MalformedNetstringError:
         write_netstring(fh_out, "PERM malformed netstring")
     except Exception as exc:
-        write_netstring(fh_out, "PERM " + str(exc))
+        write_netstring(fh_out, f"PERM {str(exc)}")
 
 
 def connect(settings):
