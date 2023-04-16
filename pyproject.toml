@@ -1,15 +1,14 @@
 [build-system]
-requires = ["flit"]
-build-backend = "flit.buildapi"
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
 
-[tool.flit.metadata]
-dist-name = "socketmap-sql"
-module = "socketmapsql"
-author = "Keith Gaughan"
-author-email = "k@stereochro.me"
-home-page = "https://github.com/kgaughan/socketmap-sql"
+[project]
+name = "socketmap-sql"
+authors = [
+	{name = "Keith Gaughan", email = "k@stereochro.me"},
+]
+readme = "README.rst"
 requires-python = ">=3.8"
-description-file = "README.rst"
 classifiers = [
 	"Development Status :: 4 - Beta",
 	"Intended Audience :: System Administrators",
@@ -20,6 +19,13 @@ classifiers = [
 	"Topic :: Communications :: Email :: Mail Transport Agents",
 	"Topic :: Database",
 ]
+dynamic = ["version", "description"]
 
-[tool.flit.scripts]
+[project.urls]
+Source = "https://github.com/kgaughan/socketmap-sql"
+
+[project.scripts]
 socketmap-sql = "socketmapsql:main"
+
+[tool.flit.module]
+name = "socketmapsql"
