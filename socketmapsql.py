@@ -49,10 +49,10 @@ FUNC_REF_PATTERN = re.compile(
 
 
 def match(name: str) -> Tuple[str, str]:
-    matches = FUNC_REF_PATTERN.match(name)
-    if not matches:
+    if matches := FUNC_REF_PATTERN.match(name):
+        return matches.group("module"), matches.group("object")
+    else:
         raise ValueError(f"Malformed callable '{name}'")
-    return matches.group("module"), matches.group("object")
 
 
 def resolve(module_name: str, obj_name: str) -> Callable:
