@@ -8,7 +8,7 @@ module = "socketmapsql"
 author = "Keith Gaughan"
 author-email = "k@stereochro.me"
 home-page = "https://github.com/kgaughan/socketmap-sql"
-requires-python = ">=3.3"
+requires-python = ">=3.8"
 description-file = "README.rst"
 classifiers = [
 	"Development Status :: 4 - Beta",
