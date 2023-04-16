@@ -158,9 +158,7 @@ def parse_config(fp: io.TextIOWrapper) -> Cfg:
 
 
 def get_int(cfg: Mapping[str, str], key: str) -> Optional[int]:
-    if key in cfg:
-        return int(cfg[key])
-    return None
+    return int(cfg[key]) if key in cfg else None
 
 
 def serve_client(
