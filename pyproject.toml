@@ -1,23 +1,23 @@
+#:schema https://json.schemastore.org/pyproject.json
+
 [build-system]
 requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
 name = "socketmap-sql"
-authors = [
-	{name = "Keith Gaughan", email = "k@stereochro.me"},
-]
+authors = [{ name = "Keith Gaughan", email = "k@stereochro.me" }]
 readme = "README.rst"
 requires-python = ">=3.8"
 classifiers = [
-	"Development Status :: 4 - Beta",
-	"Intended Audience :: System Administrators",
-	"License :: OSI Approved :: MIT License",
-	"Operating System :: POSIX",
-	"Programming Language :: Python :: 3",
-	"Programming Language :: Python :: 3 :: Only",
-	"Topic :: Communications :: Email :: Mail Transport Agents",
-	"Topic :: Database",
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: System Administrators",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Communications :: Email :: Mail Transport Agents",
+  "Topic :: Database",
 ]
 dynamic = ["version", "description"]
 
@@ -29,3 +29,11 @@ socketmap-sql = "socketmapsql:main"
 
 [tool.flit.module]
 name = "socketmapsql"
+
+[tool.rye]
+dev-dependencies = [
+    "mypy>=1.10.1",
+]
+universal = true
+generate-hashes = true
+managed = true

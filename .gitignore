@@ -100,4 +100,4 @@ ENV/
 /site
 
 # mypy
-.mypy_cache/
+/.*_cache/
