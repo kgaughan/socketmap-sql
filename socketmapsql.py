@@ -9,19 +9,18 @@ import configparser
 import contextlib
 import dataclasses
 import importlib
-import io
 import os.path
 import re
 import select
 import subprocess
 import sys
-from typing import Callable, Dict, List, Mapping, Optional, Tuple, TypedDict
+import typing as t
 
 
 __version__ = "0.2.0"
 
 
-Transform = Callable[[str, Mapping[str, str]], List[str]]
+Transform = t.Callable[[str, t.Mapping[str, str]], t.List[str]]
 
 
 @dataclasses.dataclass
@@ -30,10 +29,10 @@ class TableCfg:
     transform: Transform
 
 
-class Cfg(TypedDict):
-    database: Dict[str, str]
-    misc: Dict[str, str]
-    tables: Dict[str, TableCfg]
+class Cfg(t.TypedDict):
+    database: t.Dict[str, str]
+    misc: t.Dict[str, str]
+    tables: t.Dict[str, TableCfg]
 
 
 FUNC_REF_PATTERN = re.compile(
@@ -48,14 +47,14 @@ FUNC_REF_PATTERN = re.compile(
 )
 
 
-def match(name: str) -> Tuple[str, str]:
+def match(name: str) -> t.Tuple[str, str]:
     matches = FUNC_REF_PATTERN.match(name)
     if not matches:
         raise ValueError(f"Malformed callable '{name}'")
     return matches.group("module"), matches.group("object")
 
 
-def resolve(module_name: str, obj_name: str) -> Callable:
+def resolve(module_name: str, obj_name: str) -> t.Callable:
     """
     Resolve a named object in a module.
     """
@@ -66,7 +65,7 @@ class MalformedNetstringError(Exception):
     pass
 
 
-def read_netstring(fp: io.TextIOWrapper) -> Optional[str]:
+def read_netstring(fp: t.IO[str]) -> t.Optional[str]:
     """
     Reads a single netstring.
     """
@@ -99,26 +98,26 @@ def read_netstring(fp: io.TextIOWrapper) -> Optional[str]:
     return result
 
 
-def write_netstring(fp: io.TextIOWrapper, response: str):
+def write_netstring(fp: t.IO[str], response: str):
     fp.write(f"{len(response)}:{response},")
     fp.flush()
 
 
-def process_local(local_part: str, cfg: Mapping[str, str]) -> str:
+def process_local(local_part: str, cfg: t.Mapping[str, str]) -> str:
     delimiter = cfg.get("recipient_delimiter", "").strip()
     if delimiter != "":
         local_part = local_part.split(delimiter, 1)[0]
     return local_part.lower()
 
 
-def split(arg: str, cfg: Mapping[str, str]) -> List[str]:
+def split(arg: str, cfg: t.Mapping[str, str]) -> t.List[str]:
     parts = arg.split("@", 1)
     parts[0] = process_local(parts[0], cfg)
     parts[1] = parts[1].lower()
     return parts
 
 
-def parse_config(fp: io.TextIOWrapper) -> Cfg:
+def parse_config(fp: t.IO[str]) -> Cfg:
     transforms = {
         "all": lambda arg, cfg: [arg],
         "lowercase": lambda arg, cfg: [arg.lower()],
@@ -157,17 +156,17 @@ def parse_config(fp: io.TextIOWrapper) -> Cfg:
     )
 
 
-def get_int(cfg: Mapping[str, str], key: str) -> Optional[int]:
+def get_int(cfg: t.Mapping[str, str], key: str) -> t.Optional[int]:
     return int(cfg[key]) if key in cfg else None
 
 
 def serve_client(
-    fh_in: io.TextIOWrapper,
-    fh_out: io.TextIOWrapper,
+    fh_in: t.IO[str],
+    fh_out: t.IO[str],
     conn,
     timeout: int,
-    tables: Mapping[str, TableCfg],
-    cfg: Mapping[str, str],
+    tables: t.Mapping[str, TableCfg],
+    cfg: t.Mapping[str, str],
 ):
     max_requests = get_int(cfg, "max_requests")
     try:
@@ -210,7 +209,7 @@ def serve_client(
         write_netstring(fh_out, f"PERM {str(exc)}")
 
 
-def connect(settings: Dict[str, str]):
+def connect(settings: t.Dict[str, str]):
     """
     Connect to a database.
     """
@@ -261,8 +260,9 @@ def main():
             if req == ".exit":
                 proc.terminate()
                 break
-            write_netstring(proc.stdin, req)
-            print(read_netstring(proc.stdout))
+            if proc.stdin is not None and proc.stdout is not None:
+                write_netstring(proc.stdin, req)
+                print(read_netstring(proc.stdout))
     else:
         with contextlib.closing(connect(cfg["database"])) as conn:
             serve_client(
