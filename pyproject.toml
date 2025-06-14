@@ -30,10 +30,8 @@ socketmap-sql = "socketmapsql:main"
 [tool.flit.module]
 name = "socketmapsql"
 
-[tool.rye]
+[tool.uv]
 dev-dependencies = [
     "mypy>=1.10.1",
 ]
-universal = true
-generate-hashes = true
 managed = true
