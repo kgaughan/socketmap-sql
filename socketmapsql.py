@@ -16,11 +16,10 @@ import subprocess
 import sys
 import typing as t
 
+__version__: str = "0.2.0"
 
-__version__ = "0.2.0"
 
-
-Transform = t.Callable[[str, t.Mapping[str, str]], t.List[str]]
+Transform = t.Callable[[str, t.Mapping[str, str]], list[str]]
 
 
 @dataclasses.dataclass
@@ -30,9 +29,9 @@ class TableCfg:
 
 
 class Cfg(t.TypedDict):
-    database: t.Dict[str, str]
-    misc: t.Dict[str, str]
-    tables: t.Dict[str, TableCfg]
+    database: dict[str, str]
+    misc: dict[str, str]
+    tables: dict[str, TableCfg]
 
 
 FUNC_REF_PATTERN = re.compile(
@@ -43,11 +42,11 @@ FUNC_REF_PATTERN = re.compile(
     (?P<object>[a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)*)
     $
     """,
-    re.I | re.X,
+    re.IGNORECASE | re.VERBOSE,
 )
 
 
-def match(name: str) -> t.Tuple[str, str]:
+def match(name: str) -> tuple[str, str]:
     matches = FUNC_REF_PATTERN.match(name)
     if not matches:
         raise ValueError(f"Malformed callable '{name}'")
@@ -65,10 +64,8 @@ class MalformedNetstringError(Exception):
     pass
 
 
-def read_netstring(fp: t.IO[str]) -> t.Optional[str]:
-    """
-    Reads a single netstring.
-    """
+def read_netstring(fp: t.IO[str]) -> str | None:
+    """Reads a single netstring."""
     ns = ""
     while True:
         c = fp.read(1)
@@ -76,7 +73,7 @@ def read_netstring(fp: t.IO[str]) -> t.Optional[str]:
             return None
         if c == ":":
             break
-        if len(ns) > 10:
+        if len(ns) > 10:  # noqa: PLR2004
             raise MalformedNetstringError
         if c == "0" and ns == "":
             # We can't allow leading zeros.
@@ -98,7 +95,7 @@ def read_netstring(fp: t.IO[str]) -> t.Optional[str]:
     return result
 
 
-def write_netstring(fp: t.IO[str], response: str):
+def write_netstring(fp: t.IO[str], response: str) -> None:
     fp.write(f"{len(response)}:{response},")
     fp.flush()
 
@@ -110,7 +107,7 @@ def process_local(local_part: str, cfg: t.Mapping[str, str]) -> str:
     return local_part.lower()
 
 
-def split(arg: str, cfg: t.Mapping[str, str]) -> t.List[str]:
+def split(arg: str, cfg: t.Mapping[str, str]) -> list[str]:
     parts = arg.split("@", 1)
     parts[0] = process_local(parts[0], cfg)
     parts[1] = parts[1].lower()
@@ -119,10 +116,10 @@ def split(arg: str, cfg: t.Mapping[str, str]) -> t.List[str]:
 
 def parse_config(fp: t.IO[str]) -> Cfg:
     transforms = {
-        "all": lambda arg, cfg: [arg],
-        "lowercase": lambda arg, cfg: [arg.lower()],
+        "all": lambda arg, _: [arg],
+        "lowercase": lambda arg, _: [arg.lower()],
         "local": lambda arg, cfg: [process_local(arg.split("@", 1)[0], cfg)],
-        "domain": lambda arg, cfg: [arg.split("@", 1)[1].lower()],
+        "domain": lambda arg, _: [arg.split("@", 1)[1].lower()],
         "split": split,
     }
 
@@ -156,7 +153,7 @@ def parse_config(fp: t.IO[str]) -> Cfg:
     )
 
 
-def get_int(cfg: t.Mapping[str, str], key: str) -> t.Optional[int]:
+def get_int(cfg: t.Mapping[str, str], key: str) -> int | None:
     return int(cfg[key]) if key in cfg else None
 
 
@@ -167,7 +164,7 @@ def serve_client(
     timeout: int,
     tables: t.Mapping[str, TableCfg],
     cfg: t.Mapping[str, str],
-):
+) -> None:
     max_requests = get_int(cfg, "max_requests")
     try:
         while True:
@@ -202,17 +199,15 @@ def serve_client(
             if result is None:
                 write_netstring(fh_out, "NOTFOUND ")
             else:
-                write_netstring(fh_out, f"OK {str(result[0])}")
+                write_netstring(fh_out, f"OK {result[0]!s}")
     except MalformedNetstringError:
         write_netstring(fh_out, "PERM malformed netstring")
     except Exception as exc:
-        write_netstring(fh_out, f"PERM {str(exc)}")
+        write_netstring(fh_out, f"PERM {exc!s}")
 
 
-def connect(settings: t.Dict[str, str]):
-    """
-    Connect to a database.
-    """
+def connect(settings: dict[str, str]):
+    """Connect to a database."""
     driver = importlib.import_module(settings.pop("driver", "sqlite3"))
     return driver.connect(**settings)
 
@@ -239,7 +234,7 @@ def make_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main():
+def main() -> int:
     args = make_parser().parse_args()
 
     with contextlib.closing(args.config):
