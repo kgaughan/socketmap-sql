@@ -8,11 +8,12 @@ build-backend = "flit_core.buildapi"
 name = "socketmap-sql"
 authors = [{ name = "Keith Gaughan", email = "k@stereochro.me" }]
 readme = "README.rst"
-requires-python = ">=3.8"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: System Administrators",
-  "License :: OSI Approved :: MIT License",
   "Operating System :: POSIX",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
@@ -30,8 +31,74 @@ socketmap-sql = "socketmapsql:main"
 [tool.flit.module]
 name = "socketmapsql"
 
-[tool.uv]
-dev-dependencies = [
-    "mypy>=1.10.1",
+[dependency-groups]
+dev = [
+  "mypy>=1.10.1",
 ]
-managed = true
+
+[tool.mypy]
+ignore_missing_imports = true
+
+[tool.black]
+line-length = 120
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+  "A",
+  # "ANN",
+  "ARG",
+  "B",
+  "C",
+  "DTZ",
+  "E",
+  "EM",
+  "EXE",
+  "F",
+  "FBT",
+  "FLY",
+  "FURB",
+  "G",
+  "I",
+  "ICN",
+  "ISC002",
+  "LOG",
+  "N",
+  "PERF",
+  "PIE",
+  "PLC",
+  "PLE",
+  "PLR",
+  "PLW",
+  # "PT",
+  "PYI",
+  "Q",
+  "RET",
+  "RSE",
+  "RUF",
+  "S",
+  "SIM",
+  "SLOT",
+  "T",
+  "TC",
+  "TID",
+  "TRY",
+  "UP",
+  "W",
+  "YTT",
+]
+ignore = [
+  "EM102",   # Exception must not use an f-string literal, assign to variable first
+  "PLR0913", # Too many arguments in function definition
+  "T201",    # `print` found
+  "TRY003",  # Avoid specifying long messages outside the exception class
+]
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
