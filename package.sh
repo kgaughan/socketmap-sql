@@ -25,7 +25,7 @@ while getopts "hP" opt; do
 			prompt=1
 			;;
 		*)
-			usage 2>&1
+			usage >&2
 			exit 1
 			;;
 	esac
