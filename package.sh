@@ -31,18 +31,20 @@ while getopts "hP" opt; do
 	esac
 done
 
-if test "${prompt:-}" = "1" -a -z "${NFPM_PASSPHRASE:-}"; then
+if test "${prompt:-}" = "1" && test -z "${NFPM_PASSPHRASE:-}"; then
 	orig_stty="$(stty -g)"
 	trap 'stty "$orig_stty"' INT TERM EXIT
 	stty -echo
-	read -p "passphrase> " NFPM_PASSPHRASE
+	printf "passphrase> "
+	read -r NFPM_PASSPHRASE
 	stty "$orig_stty"
 	trap - INT TERM EXIT
 	echo
 	export NFPM_PASSPHRASE
 fi
 
-export VERSION=$(git describe --tags --abbrev=0 || echo "v0.0.0")
-export SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)
+VERSION="$(git describe --tags --abbrev=0 || echo "v0.0.0")"
+SOURCE_DATE_EPOCH="$(git log -1 --pretty=%ct)"
+export VERSION SOURCE_DATE_EPOCH
 
 nfpm package --packager rpm
