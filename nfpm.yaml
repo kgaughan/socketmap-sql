@@ -1,0 +1,20 @@
+name: socketmap-sql
+arch: all
+version: $VERSION
+depends:
+  - python3
+maintainer: "Keith Gaughan <k@stereochro.me>"
+description: |
+   A socketmap script for interfacing with an SQL database.
+homepage: "https://github.com/kgaughan/socketmap-sql/"
+license: "MIT"
+
+contents:
+  - src: ./socketmapsql.py
+    dst: /usr/libexec/socketmap-sql
+    file_info:
+      mode: 0755
+
+rpm:
+  signature:
+    key_file: signing.gpg
