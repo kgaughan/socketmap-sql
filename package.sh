@@ -32,9 +32,12 @@ while getopts "hP" opt; do
 done
 
 if test "${prompt:-}" = "1" -a -z "${NFPM_PASSPHRASE:-}"; then
+	orig_stty="$(stty -g)"
+	trap 'stty "$orig_stty"' INT TERM EXIT
 	stty -echo
 	read -p "passphrase> " NFPM_PASSPHRASE
-	stty echo
+	stty "$orig_stty"
+	trap - INT TERM EXIT
 	echo
 	export NFPM_PASSPHRASE
 fi
