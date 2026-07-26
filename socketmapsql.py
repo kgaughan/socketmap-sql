@@ -16,7 +16,7 @@ import subprocess
 import sys
 import typing as t
 
-__version__: str = "0.2.0"
+__version__: str = "0.2.1"
 
 
 Transform = t.Callable[[str, t.Mapping[str, str]], list[str]]
