@@ -75,6 +75,7 @@ following to ``master.cf``::
 Compatibility
 =============
 
-The script only works on Python 3.8+.
+The script only supports Python 3.12+. It may work with earlier versions, but
+I can't give any guarantees of that.
 
 .. vim:set ft=rst:
